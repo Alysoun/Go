@@ -1,0 +1,326 @@
+:root {
+    --primary: #2A9D8F;
+    --secondary: #E9C46A;
+    --dark: #264653;
+    --danger: #E76F51;
+    --light: #F4F1DE;
+    --board: #E9B872;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, var(--dark) 0%, #1a1a1a 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--light);
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.game-info {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    color: var(--secondary);
+    margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+select {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--light);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+select option {
+    background-color: var(--dark);
+    color: var(--light);
+    padding: 0.5rem;
+}
+
+select:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(42, 157, 143, 0.4);
+}
+
+.score {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin: 1.5rem 0;
+    font-size: 1.2rem;
+}
+
+.score div {
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    min-width: 120px;
+}
+
+canvas {
+    border-radius: 15px;
+    background: var(--board);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+canvas:hover {
+    transform: scale(1.02);
+}
+
+.status {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    min-height: 1.5em;
+    color: var(--secondary);
+}
+
+#passMove {
+    background: var(--danger);
+}
+
+#passMove:hover {
+    box-shadow: 0 5px 15px rgba(231, 111, 81, 0.4);
+}
+
+.rules-btn {
+    background: var(--secondary);
+    color: var(--dark);
+}
+
+.rules-btn:hover {
+    box-shadow: 0 5px 15px rgba(233, 196, 106, 0.4);
+}
+
+.game-over {
+    color: var(--danger);
+    font-weight: bold;
+    padding: 1rem;
+    background: rgba(231, 111, 81, 0.1);
+    border-radius: 12px;
+    margin-top: 1rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Stone placement animation */
+@keyframes placeStone {
+    0% { transform: scale(1.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.stone-animation {
+    animation: placeStone 0.3s ease-out;
+}
+
+/* Victory celebration */
+@keyframes celebrate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1); }
+}
+
+.victory {
+    animation: celebrate 0.5s ease-in-out;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    box-shadow: 0 8px 32px var(--shadow);
+    max-height: 90vh;
+    overflow-y: auto;
+    color: var(--light);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+    color: var(--secondary);
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.close {
+    color: var(--light);
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: var(--danger);
+}
+
+.rules-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.rule-tab {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    color: var(--light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.rule-tab:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.rule-tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+.rule-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.rule-section.active {
+    display: block;
+}
+
+.rule-section h3 {
+    color: var(--secondary);
+    margin-bottom: 1rem;
+}
+
+.rule-section ul {
+    list-style: none;
+    margin-bottom: 1.5rem;
+}
+
+.rule-section li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.rule-section li::before {
+    content: "•";
+    color: var(--primary);
+    position: absolute;
+    left: 0;
+    font-size: 1.2em;
+}
+
+.rule-diagram {
+    background: var(--board);
+    border-radius: 15px;
+    margin-top: 1.5rem;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.rule-diagram:hover {
+    transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+} 

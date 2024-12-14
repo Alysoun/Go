@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Go Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-info">
+            <h1>Modern Go</h1>
+            <div class="controls">
+                <select id="boardSize">
+                    <option value="9">9x9</option>
+                    <option value="13">13x13</option>
+                    <option value="19">19x19</option>
+                </select>
+                <select id="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <button id="newGame">New Game</button>
+                <button id="passMove">Pass</button>
+                <button id="rulesBtn" class="rules-btn">Rules</button>
+            </div>
+            <div class="score">
+                <div>Black: <span id="blackScore">0</span></div>
+                <div>White: <span id="whiteScore">0</span></div>
+            </div>
+        </div>
+        <canvas id="goBoard"></canvas>
+        <div class="status" id="gameStatus"></div>
+    </div>
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Go Rules</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="rules-nav">
+                    <button class="rule-tab active" data-section="basics">Basics</button>
+                    <button class="rule-tab" data-section="capturing">Capturing</button>
+                    <button class="rule-tab" data-section="territory">Territory</button>
+                    <button class="rule-tab" data-section="scoring">Scoring</button>
+                    <button class="rule-tab" data-section="special">Special Rules</button>
+                </div>
+                <div class="rules-content">
+                    <div id="basics" class="rule-section active">
+                        <h3>Basic Rules</h3>
+                        <ul>
+                            <li>Go is played on a grid of 9x9, 13x13, or 19x19 lines</li>
+                            <li>Players take turns placing stones on intersections</li>
+                            <li>Black plays first</li>
+                            <li>Stones cannot be moved once placed</li>
+                            <li>The goal is to surround more territory than your opponent</li>
+                        </ul>
+                        <div class="rule-diagram" id="basicsDiagram"></div>
+                    </div>
+                    <div id="capturing" class="rule-section">
+                        <h3>Capturing Stones</h3>
+                        <ul>
+                            <li>Stones must have at least one liberty (empty adjacent intersection) to survive</li>
+                            <li>When a stone or group has no liberties, it is captured and removed</li>
+                            <li>Captured stones count as points at the end of the game</li>
+                        </ul>
+                        <div class="rule-diagram" id="capturingDiagram"></div>
+                    </div>
+                    <div id="territory" class="rule-section">
+                        <h3>Territory</h3>
+                        <ul>
+                            <li>Territory is empty space surrounded by your stones</li>
+                            <li>Borders must be secure against enemy invasion</li>
+                            <li>Each point of territory counts as one point</li>
+                        </ul>
+                        <div class="rule-diagram" id="territoryDiagram"></div>
+                    </div>
+                    <div id="scoring" class="rule-section">
+                        <h3>Scoring</h3>
+                        <ul>
+                            <li>Count your territory points</li>
+                            <li>Add captured enemy stones</li>
+                            <li>White receives 6.5 points compensation (komi)</li>
+                            <li>Highest total wins</li>
+                        </ul>
+                        <div class="rule-diagram" id="scoringDiagram"></div>
+                    </div>
+                    <div id="special" class="rule-section">
+                        <h3>Special Rules</h3>
+                        <ul>
+                            <li>Ko Rule: Cannot immediately recapture in a way that repeats the board position</li>
+                            <li>Suicide Rule: Cannot place a stone that would have no liberties unless it captures</li>
+                            <li>Pass: Players can pass their turn</li>
+                            <li>Game End: Two consecutive passes end the game</li>
+                        </ul>
+                        <div class="rule-diagram" id="specialDiagram"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="go.js"></script>
+    <script src="ai.js"></script>
+    <script src="main.js"></script>
+    <script src="rules.js"></script>
+</body>
+</html> 
