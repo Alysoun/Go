@@ -98,6 +98,12 @@ class GoInterface {
             this.game.makeMove(move.row, move.col);
             this.draw();
             this.updateScore();
+        } else {
+            // AI decides to pass
+            if (this.game.pass()) {
+                this.updateStatus();
+                this.showGameEnd();
+            }
         }
     }
 
@@ -289,20 +295,26 @@ class GoInterface {
         
         if (this.game.pass()) {
             // Game ended by passing
-            this.handleGameEnd();
+            this.updateStatus();
+            this.showGameEnd();
         } else {
             this.updateScore();
             setTimeout(() => this.makeAIMove(), 500);
         }
     }
 
-    handleGameEnd() {
-        const finalScore = this.game.getFinalScore();
-        const winner = finalScore.black > finalScore.white ? 'Black' : 'White';
-        const margin = Math.abs(finalScore.black - finalScore.white);
-        
+    showGameEnd() {
+        const score = this.game.finalScore;
+        const margin = Math.abs(score.black - score.white);
         const status = document.getElementById('gameStatus');
-        status.textContent = `Game Over! ${winner} wins by ${margin.toFixed(1)} points`;
+        
+        status.textContent = `Game Over! ${this.game.winner.charAt(0).toUpperCase() + 
+            this.game.winner.slice(1)} wins by ${margin.toFixed(1)} points! ` +
+            `(Black: ${score.black.toFixed(1)}, White: ${score.white.toFixed(1)})`;
+        status.classList.add('game-over');
+
+        // Add victory animation to the winner's score display
+        document.querySelector(`.score div:contains('${this.game.winner}')`).classList.add('victory');
         
         // Enable replay controls
         document.getElementById('prevMove').disabled = false;
@@ -421,8 +433,7 @@ class GoInterface {
     updateStatus() {
         const status = document.getElementById('gameStatus');
         if (this.game.gameEnded) {
-            status.textContent = `Game Over! ${this.game.winner.charAt(0).toUpperCase() + this.game.winner.slice(1)} wins!`;
-            status.classList.add('game-over');
+            this.showGameEnd();
         } else {
             status.textContent = `Current player: ${this.game.currentPlayer}`;
             status.classList.remove('game-over');

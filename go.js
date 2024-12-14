@@ -34,7 +34,7 @@ class GoGame {
     makeMove(row, col) {
         if (this.gameEnded || !this.isValidMove(row, col)) return false;
         
-        // Reset consecutive passes
+        // Reset consecutive passes when a move is made
         this.consecutivePasses = 0;
         
         this.board[row][col] = this.currentPlayer;
@@ -190,23 +190,27 @@ class GoGame {
         this.consecutivePasses++;
         this.history.push({ isPass: true, player: this.currentPlayer });
         this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
-        return this.checkGameEnd();
-    }
-
-    checkGameEnd() {
+        
+        // Check for game end after pass
         if (this.consecutivePasses >= 2) {
-            // Calculate final score
-            const territory = this.calculateTerritory();
-            const finalScore = {
-                black: territory.black + this.captures.black,
-                white: territory.white + this.captures.white + 6.5 // komi
-            };
-            
-            this.winner = finalScore.black > finalScore.white ? 'black' : 'white';
-            this.gameEnded = true;
+            this.endGame();
             return true;
         }
         return false;
+    }
+
+    endGame() {
+        this.gameEnded = true;
+        // Calculate final score including territory and captures
+        const territory = this.calculateTerritory();
+        const finalScore = {
+            black: territory.black + this.captures.black,
+            white: territory.white + this.captures.white + 6.5 // komi
+        };
+        
+        this.winner = finalScore.black > finalScore.white ? 'black' : 'white';
+        this.finalScore = finalScore;
+        return finalScore;
     }
 
     calculateTerritory() {
