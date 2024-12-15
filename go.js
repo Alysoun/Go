@@ -22,16 +22,23 @@ class GoGame {
         const tempBoard = this.board.map(row => [...row]);
         tempBoard[row][col] = this.currentPlayer;
 
-        // Check if move would result in a capture or if the group has liberties
-        const group = this.findGroup(row, col, tempBoard);
-        if (this.hasLiberties(group, tempBoard)) return true;
-
-        // Check if move captures opponent stones
+        // First check if this move captures any opponent stones
         const captures = this.findCaptures(row, col, tempBoard);
-        if (captures.length > 0) return true;
+        if (captures.length > 0) {
+            // Apply captures to check resulting position
+            captures.forEach(({row, col}) => {
+                tempBoard[row][col] = null;
+            });
+        }
 
-        // If no captures and no liberties, it's a suicide move
-        return false;
+        // Now check if the placed stone and any connected friendly stones have liberties
+        const group = this.findGroup(row, col, tempBoard);
+        if (!this.hasLiberties(group, tempBoard)) {
+            return false;  // Suicide move
+        }
+
+        // Also check if this move would capture any opponent groups
+        return true;
     }
 
     makeMove(row, col) {
@@ -40,6 +47,7 @@ class GoGame {
         // Reset consecutive passes when a move is made
         this.consecutivePasses = 0;
         
+        // Make the move
         this.board[row][col] = this.currentPlayer;
         const captures = this.findCaptures(row, col, this.board);
         
@@ -49,8 +57,12 @@ class GoGame {
             this.captures[this.currentPlayer]++;
         });
 
-        // Update ko point
-        this.ko = captures.length === 1 ? {row, col} : null;
+        // Update ko point if exactly one stone was captured
+        if (captures.length === 1) {
+            this.ko = {row: captures[0].row, col: captures[0].col};
+        } else {
+            this.ko = null;
+        }
 
         // Save move to history
         this.history.push({row, col, player: this.currentPlayer});
