@@ -20,6 +20,17 @@ class GoInterface {
         // Add animation frame request
         requestAnimationFrame(this.animate.bind(this));
         this.updateStatus();
+        
+        // Add thinking indicator
+        this.thinkingIndicator = document.createElement('div');
+        this.thinkingIndicator.className = 'thinking-indicator';
+        this.thinkingIndicator.innerHTML = `
+            <div class="thinking-dots">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="thinking-text">AI is thinking...</div>
+        `;
+        document.querySelector('.container').appendChild(this.thinkingIndicator);
     }
 
     setupEventListeners() {
@@ -93,18 +104,27 @@ class GoInterface {
     }
 
     makeAIMove() {
-        const move = this.ai.makeMove(this.game);
-        if (move) {
-            this.game.makeMove(move.row, move.col);
-            this.draw();
-            this.updateScore();
-        } else {
-            // AI decides to pass
-            if (this.game.pass()) {
-                this.updateStatus();
-                this.showGameEnd();
+        this.showThinking(true);
+        // Use setTimeout to allow UI to update before AI starts thinking
+        setTimeout(() => {
+            const move = this.ai.makeMove(this.game);
+            if (move) {
+                this.game.makeMove(move.row, move.col);
+                this.draw();
+                this.updateScore();
+            } else {
+                // AI decides to pass
+                if (this.game.pass()) {
+                    this.updateStatus();
+                    this.showGameEnd();
+                }
             }
-        }
+            this.showThinking(false);
+        }, 50);
+    }
+
+    showThinking(show) {
+        this.thinkingIndicator.style.display = show ? 'flex' : 'none';
     }
 
     animate(timestamp) {
@@ -283,11 +303,27 @@ class GoInterface {
 
     updateScore() {
         const score = this.game.getScore();
-        document.getElementById('blackScore').textContent = score.black;
-        document.getElementById('whiteScore').textContent = score.white;
+        const stones = {
+            black: this.countStones('black'),
+            white: this.countStones('white')
+        };
         
-        const status = document.getElementById('gameStatus');
-        status.textContent = `Current player: ${this.game.currentPlayer}`;
+        document.getElementById('blackScore').textContent = 
+            `${stones.black} stones${this.game.gameEnded ? ` (${score.black.toFixed(1)} total)` : ''}`;
+        document.getElementById('whiteScore').textContent = 
+            `${stones.white} stones${this.game.gameEnded ? ` (${score.white.toFixed(1)} total)` : ''}`;
+    }
+
+    countStones(color) {
+        let count = 0;
+        for (let row = 0; row < this.game.size; row++) {
+            for (let col = 0; col < this.game.size; col++) {
+                if (this.game.board[row][col] === color) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     handlePass() {
@@ -314,7 +350,12 @@ class GoInterface {
         status.classList.add('game-over');
 
         // Add victory animation to the winner's score display
-        document.querySelector(`.score div:contains('${this.game.winner}')`).classList.add('victory');
+        const scoreElements = document.querySelectorAll('.score div');
+        scoreElements.forEach(element => {
+            if (element.textContent.toLowerCase().includes(this.game.winner)) {
+                element.classList.add('victory');
+            }
+        });
         
         // Enable replay controls
         document.getElementById('prevMove').disabled = false;

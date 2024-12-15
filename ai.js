@@ -1,63 +1,80 @@
 class GoAI {
-    constructor(difficulty = 'easy') {
+    constructor(difficulty = 'hard') {
         this.difficulty = difficulty;
-        // Limit depth based on difficulty
+        // Adjust depth based on difficulty
         this.maxDepth = {
             'easy': 1,
-            'medium': 2,
-            'hard': 3
+            'medium': 3,
+            'hard': 4
         }[difficulty];
         
-        // Evaluation weights
+        // Refined evaluation weights
         this.weights = {
-            territory: 1.0,
-            captures: 2.0,
-            liberties: 0.3,
-            influence: 0.5
+            territory: 2.0,    // Territory is important
+            captures: 1.5,     // Captures matter but not as much as territory
+            liberties: 1.0,    // Having breathing room is important
+            influence: 1.2,    // Connection and influence
+            center: 0.8,      // Center control
+            edge: -0.3        // Slight penalty for edge moves
         };
     }
 
     makeMove(game) {
+        if (game.history.length < 5) {
+            return this.makeOpeningMove(game);
+        }
+
+        // Use minimax with alpha-beta pruning
+        let bestMove = null;
+        let bestScore = -Infinity;
+        let alpha = -Infinity;
+        let beta = Infinity;
         const moves = this.getPossibleMoves(game);
-        if (moves.length === 0) {
-            game.pass();
+
+        if (moves.length === 0 || this.shouldPass(game)) {
             return null;
         }
 
-        // For easy difficulty, just pick a random valid move
-        if (this.difficulty === 'easy') {
-            return moves[Math.floor(Math.random() * moves.length)];
-        }
-
-        let bestScore = -Infinity;
-        let bestMove = null;
-        
-        // Use alpha-beta pruning
-        const alpha = -Infinity;
-        const beta = Infinity;
-
-        // Sort moves to improve pruning efficiency
-        this.orderMoves(moves, game);
+        // Sort moves for better pruning
+        moves.sort((a, b) => this.quickEvaluate(b, game) - this.quickEvaluate(a, game));
 
         for (const move of moves) {
-            const newGame = this.cloneGame(game);
-            newGame.makeMove(move.row, move.col);
-            
-            const score = -this.minimax(newGame, this.maxDepth - 1, -beta, -alpha, false);
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
+            const gameClone = this.cloneGame(game);
+            if (gameClone.makeMove(move.row, move.col)) {
+                const score = -this.minimax(gameClone, this.maxDepth - 1, -beta, -alpha, false);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+                alpha = Math.max(alpha, score);
+                if (alpha >= beta) break;
             }
-            alpha = Math.max(alpha, score);
-            if (alpha >= beta) break;
         }
 
         return bestMove;
     }
 
+    quickEvaluate(move, game) {
+        let score = 0;
+        
+        // Prefer moves that capture
+        const captures = game.findCaptures(move.row, move.col, game.board);
+        score += captures.length * 5;
+        
+        // Prefer moves that defend against captures
+        const group = game.findGroup(move.row, move.col, game.board);
+        if (game.hasLiberties(group, game.board)) {
+            score += 3;
+        }
+        
+        // Prefer moves near center
+        const centerDist = Math.abs(move.row - game.size/2) + Math.abs(move.col - game.size/2);
+        score -= centerDist * 0.5;
+        
+        return score;
+    }
+
     minimax(game, depth, alpha, beta, maximizing) {
-        // Early termination conditions
         if (depth === 0 || game.gameEnded) {
             return this.evaluatePosition(game);
         }
@@ -66,22 +83,19 @@ class GoAI {
         if (moves.length === 0) return this.evaluatePosition(game);
 
         let bestScore = maximizing ? -Infinity : Infinity;
-
+        
         for (const move of moves) {
-            const newGame = this.cloneGame(game);
-            newGame.makeMove(move.row, move.col);
-            
-            const score = this.minimax(newGame, depth - 1, -beta, -alpha, !maximizing);
-            
-            if (maximizing) {
-                bestScore = Math.max(bestScore, score);
-                alpha = Math.max(alpha, score);
-            } else {
-                bestScore = Math.min(bestScore, score);
-                beta = Math.min(beta, score);
+            const gameClone = this.cloneGame(game);
+            if (gameClone.makeMove(move.row, move.col)) {
+                const score = this.minimax(gameClone, depth - 1, -beta, -alpha, !maximizing);
+                bestScore = maximizing ? Math.max(bestScore, score) : Math.min(bestScore, score);
+                if (maximizing) {
+                    alpha = Math.max(alpha, score);
+                } else {
+                    beta = Math.min(beta, score);
+                }
+                if (alpha >= beta) break;
             }
-            
-            if (alpha >= beta) break;
         }
 
         return bestScore;
@@ -95,24 +109,6 @@ class GoAI {
         
         // Sort moves by score
         moves.sort((a, b) => b.score - a.score);
-    }
-
-    quickEvaluateMove(move, game) {
-        let score = 0;
-        
-        // Prefer moves that capture
-        const captures = game.findCaptures(move.row, move.col, game.board);
-        score += captures.length * 10;
-        
-        // Prefer moves near the center
-        const centerDist = Math.abs(move.row - game.size/2) + Math.abs(move.col - game.size/2);
-        score -= centerDist;
-        
-        // Prefer moves near existing stones
-        const adjacentStones = this.countAdjacentStones(move, game);
-        score += adjacentStones;
-        
-        return score;
     }
 
     countAdjacentStones(move, game) {
@@ -177,12 +173,32 @@ class GoAI {
         }
     }
 
-    evaluatePosition(game) {
+    evaluatePosition(game, move) {
+        let score = 0;
+        const isBlack = game.currentPlayer === 'black';
+        
+        // Territory control
         const territory = game.calculateTerritory();
-        const score = 
-            (territory.white - territory.black) * this.weights.territory +
-            (game.captures.white - game.captures.black) * this.weights.captures;
+        score += (territory.black - territory.white) * (isBlack ? 1 : -1) * this.weights.territory;
+        
+        // Captures
+        score += (game.captures.black - game.captures.white) * (isBlack ? 1 : -1) * this.weights.captures;
+        
+        // Position evaluation
+        if (move) {
+            const centerDist = Math.abs(move.row - game.size/2) + Math.abs(move.col - game.size/2);
+            score -= centerDist * 0.5; // Prefer moves closer to center
             
+            // Group strength
+            const group = game.findGroup(move.row, move.col, game.board);
+            const liberties = game.hasLiberties(group, game.board);
+            score += liberties * this.weights.liberties;
+            
+            // Connection to friendly stones
+            const adjacentFriendly = this.countAdjacentStones(move, game);
+            score += adjacentFriendly * this.weights.influence;
+        }
+        
         return score;
     }
 
@@ -193,5 +209,60 @@ class GoAI {
         newGame.captures = {...game.captures};
         newGame.ko = game.ko ? {...game.ko} : null;
         return newGame;
+    }
+
+    shouldPass(game) {
+        // Pass if no good moves are available
+        const moves = this.getPossibleMoves(game);
+        if (moves.length === 0) return true;
+        
+        // Count empty spaces
+        let emptySpaces = 0;
+        for (let row = 0; row < game.size; row++) {
+            for (let col = 0; col < game.size; col++) {
+                if (game.board[row][col] === null) {
+                    emptySpaces++;
+                }
+            }
+        }
+        
+        // Pass if board is nearly full (less than 10% empty)
+        if (emptySpaces < game.size * game.size * 0.1) {
+            return true;
+        }
+        
+        // Pass if opponent just passed and we're ahead in score
+        if (game.history.length > 0 && game.history[game.history.length - 1].isPass) {
+            const score = game.getScore();
+            const isBlack = game.currentPlayer === 'black';
+            // Account for komi when deciding to pass
+            const adjustedScore = score.black - (score.white + 6.5);
+            return (isBlack && adjustedScore > 0) || (!isBlack && adjustedScore < 0);
+        }
+        
+        return false;
+    }
+
+    makeOpeningMove(game) {
+        const center = Math.floor(game.size / 2);
+        const near = Math.floor(game.size / 3);
+        const far = game.size - near - 1;
+        
+        // Common opening moves
+        const openingMoves = [
+            {row: center, col: center},  // tengen
+            {row: near, col: near},      // hoshi points
+            {row: near, col: far},
+            {row: far, col: near},
+            {row: far, col: far}
+        ];
+        
+        // Filter to valid moves and pick randomly
+        const validMoves = openingMoves.filter(move => game.isValidMove(move.row, move.col));
+        if (validMoves.length > 0) {
+            return validMoves[Math.floor(Math.random() * validMoves.length)];
+        }
+        
+        return null;
     }
 } 

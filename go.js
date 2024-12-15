@@ -28,7 +28,10 @@ class GoGame {
 
         // Check if move captures opponent stones
         const captures = this.findCaptures(row, col, tempBoard);
-        return captures.length > 0;
+        if (captures.length > 0) return true;
+
+        // If no captures and no liberties, it's a suicide move
+        return false;
     }
 
     makeMove(row, col) {
@@ -215,11 +218,12 @@ class GoGame {
 
     calculateTerritory() {
         const territory = { black: 0, white: 0 };
-        const visited = Array(this.size).fill().map(() => Array(this.size).fill(false));
+        const visited = new Set();
         
         for (let row = 0; row < this.size; row++) {
             for (let col = 0; col < this.size; col++) {
-                if (visited[row][col] || this.board[row][col] !== null) continue;
+                const key = `${row},${col}`;
+                if (visited.has(key) || this.board[row][col] !== null) continue;
                 
                 const region = this.floodFillTerritory(row, col, visited);
                 if (region.owner) {
@@ -239,17 +243,18 @@ class GoGame {
         
         while (queue.length > 0) {
             const current = queue.shift();
-            if (visited[current.row][current.col]) continue;
+            const key = `${current.row},${current.col}`;
+            if (visited.has(key)) continue;
             
-            visited[current.row][current.col] = true;
+            visited.add(key);
             points.push(current);
             
-            const neighbors = this.getAdjacentPositions(current.row, current.col);
-            for (const next of neighbors) {
+            const adjacent = this.getAdjacent(current.row, current.col);
+            for (const next of adjacent) {
                 const stone = this.board[next.row][next.col];
                 if (stone === 'black') blackBorder = true;
                 else if (stone === 'white') whiteBorder = true;
-                else if (!visited[next.row][next.col]) {
+                else if (!visited.has(`${next.row},${next.col}`)) {
                     queue.push(next);
                 }
             }
@@ -260,5 +265,27 @@ class GoGame {
         if (whiteBorder && !blackBorder) owner = 'white';
         
         return { owner, points: points.length };
+    }
+
+    getAdjacentPositions(row, col) {
+        const adjacent = [];
+        const directions = [
+            [-1, 0],  // up
+            [1, 0],   // down
+            [0, -1],  // left
+            [0, 1]    // right
+        ];
+        
+        for (const [dx, dy] of directions) {
+            const newRow = row + dx;
+            const newCol = col + dy;
+            
+            if (newRow >= 0 && newRow < this.size && 
+                newCol >= 0 && newCol < this.size) {
+                adjacent.push([newRow, newCol]);
+            }
+        }
+        
+        return adjacent;
     }
 } 
